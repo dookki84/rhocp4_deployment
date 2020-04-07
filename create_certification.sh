@@ -21,7 +21,7 @@ expect "(.*)Common Name(.*):"
 send -- "utilityvm.example.com\r"
 
 expect "(.*)Email Address(.*):"
-send -- "dekim@redhat.com\r"
+send -- "test@redhat.com\r"
 
 interact
 
