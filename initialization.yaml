@@ -1,0 +1,122 @@
+- name: Initialization
+  hosts: localhost
+  vars:
+    OCP_RELEASE: "4.3.0"
+  tasks:
+    - name: Update OCP_RELEASE into .bashrc
+      lineinfile:
+        path: $HOME/.bashrc
+        regexp: "^export OCP_RELEASE"
+        line: "export OCP_RELEASE=4.3.0"
+
+    - name: Download OC Client Tool
+      get_url:
+        url: https://mirror.openshift.com/pub/openshift-v4/clients/ocp/{{ OCP_RELEASE }}/openshift-client-linux-{{ OCP_RELEASE }}.tar.gz
+        dest: /home/dekim-redhat.com
+
+    - name: Extract OC Client Tool into /usr/local/sbin/
+      shell: sudo tar xzf /home/dekim-redhat.com/openshift-client-linux-{{ OCP_RELEASE }}.tar.gz -C /usr/local/sbin/ oc kubectl
+      args:
+        chdir: /usr/local/sbin/
+        creates: oc
+
+    - name: Create bash_completion for openshift
+      shell: oc completion bash | sudo tee /etc/bash_completion.d/openshift > /dev/null
+      args:
+        chdir: /etc/bash_completion.d/
+        creates: openshift
+
+#    - name: Create Directory for Registry
+#      file:
+#        path: /opt/registry/{{ item }}
+#        state: directory
+#        owner: cloud-user
+#        recurse: yes
+#      loop:
+#        - auth
+#        - certs
+#        - data
+#      become: true
+#
+#    - name: Create SSL Certification
+#      expect:
+#        echo: yes
+#        chdir: /opt/registry/certs
+#        command: openssl req -newkey rsa:4096 -nodes -sha256 -keyout domain.key -x509 -days 365 -out domain.crt
+#        timeout: 10
+#        responses:
+#          (.*)Country Name(.*): "KR"
+#          (.*)State or Province Name(.*): "SEOUL"
+#          (.*)Locality Name(.*): "SEOUL"
+#          (.*)Organization Name(.*): "Red Hat"
+#          (.*)Organizational Unit Name(.*): "GPTE"
+#          (.*)Common Name(.*): "utilityvm.example.com"
+#          (.*)Email Address(.*): "dekim@redhat.com"
+
+
+- name: Deploy Container Registry
+  hosts: utilityvm.example.com
+  remote_user: cloud-user
+  become: true
+  tasks:
+    - name: Create Directory for Registry
+      file:
+        path: /opt/registry/{{ item }}
+        state: directory
+        owner: cloud-user
+        recurse: yes
+      loop:
+        - auth
+        - certs
+        - data
+
+    - name: Install expect package
+      yum:
+        name: expect
+        state: present
+
+    - name: Create SSL Certification
+      shell: |
+        spawn openssl req -newkey rsa:4096 -nodes -sha256 -keyout /opt/registry/certs/domain.key -x509 -days 365 -out /opt/registry/certs/domain.crt
+
+        expect "(.*)Country Name(.*):"
+        send -- "KR\r"
+        
+        expect "(.*)State or Province Name(.*):"
+        send -- "SEOUL\r"
+        
+        expect "(.*)Locality Name(.*):"
+        send -- "SEOUL\r"
+        
+        expect "(.*)Organization Name(.*):"
+        send -- "Red Hat\r"
+        
+        expect "(.*)Organizational Unit Name(.*):"
+        send -- "GPTE\r"
+        
+        expect "(.*)Common Name(.*):"
+        send -- "utilityvm.example.com\r"
+        
+        expect "(.*)Email Address(.*):"
+        send -- "dekim@redhat.com\r"
+
+        interact
+
+      args:
+        executable: /usr/bin/expect
+
+
+#    - name: Create SSL Certification
+#      expect:
+#        echo: yes
+#        chdir: /opt/registry/certs
+#        command: openssl req -newkey rsa:4096 -nodes -sha256 -keyout domain.key -x509 -days 365 -out domain.crt
+#        timeout: 10
+#        responses:
+#          (.*)Country Name(.*): "KR"
+#          (.*)State or Province Name(.*): "SEOUL"
+#          (.*)Locality Name(.*): "SEOUL"
+#          (.*)Organization Name(.*): "Red Hat"
+#          (.*)Organizational Unit Name(.*): "GPTE"
+#          (.*)Common Name(.*): "utilityvm.example.com"
+#          (.*)Email Address(.*): "dekim@redhat.com"
