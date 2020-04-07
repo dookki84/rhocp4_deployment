@@ -5,7 +5,7 @@
   tasks:
     - name: Update OCP_RELEASE into .bashrc
       lineinfile:
-        path: $HOME/.bashrc
+        path: /home/dekim-redhat.com/.bashrc
         regexp: "^export OCP_RELEASE"
         line: "export OCP_RELEASE=4.3.0"
 
@@ -186,3 +186,69 @@
 
     - name: Execute update-ca-trust
       shell: update-ca-trust
+
+
+    - name: Create Authfile
+      shell: podman login -u openshift -p redhat --authfile /home/dekim-redhat.com/pullsecret_config.json utilityvm.example.com:5000
+      args:
+        creates: /home/dekim-redhat.com/pullsecret_config.json
+
+
+
+    - name: Merge pullsecret & ocp_secret
+      shell: jq -c --argjson var "$(jq .auths /home/dekim-redhat.com/pullsecret_config.json)" '.auths += $var' /home/dekim-redhat.com/ocp_pullsecret.json > /home/dekim-redhat.com/merged_pullsecret.json
+      args:
+        creates: /home/dekim-redhat.com/merged_pullsecret.json
+
+
+    - name: Update LOCAL_REGISTRY into .bashrc
+      lineinfile:
+        path: /home/dekim-redhat.com/.bashrc
+        regexp: "^export LOCAL_REGISTRY"
+        line: "export LOCAL_REGISTRY=utilityvm.example.com:5000"
+
+    - name: Update LOCAL_REPOSITORY into .bashrc
+      lineinfile:
+        path: /home/dekim-redhat.com/.bashrc
+        regexp: "^export LOCAL_REPOSITORY"
+        line: "export LOCAL_REPOSITORY=ocp4/openshift4"
+
+
+    - name: Update LOCAL_SECRET_JSON into .bashrc
+      lineinfile:
+        path: /home/dekim-redhat.com/.bashrc
+        regexp: "^export LOCAL_SECRET_JSON"
+        line: "export LOCAL_SECRET_JSON=/home/dekim-redhat.com/merged_pullsecret.json"
+
+
+    - name: Update PRODUCT_REPO into .bashrc
+      lineinfile:
+        path: /home/dekim-redhat.com/.bashrc
+        regexp: "^export PRODUCT_REPO"
+        line: "export PRODUCT_REPO=openshift-release-dev"
+
+    - name: Update RELEASE_NAME into .bashrc
+      lineinfile:
+        path: /home/dekim-redhat.com/.bashrc
+        regexp: "^export RELEASE_NAME"
+        line: "export RELEASE_NAME=ocp-release"
+
+
+    - name: Import source file
+      shell: source $HOME/.bashrc
+
+    - name: print variable
+      shell: echo $PRODUCT_REPO
+      register: test
+
+    - name: print debug
+      debug:
+        msg: "{{ test }}"
+
+    - name: Release Mirror
+      shell: /usr/local/sbin/oc adm -a ${{ '{' }}LOCAL_SECRET_JSON{{ '}' }} release mirror --from=quay.io/${{ '{' }}PRODUCT_REPO{{ '}' }}/${{ '{' }}RELEASE_NAME{{ '}' }}:${{ '{' }}OCP_RELEASE{{ '}' }}-x86_64 --to=${{ '{' }}LOCAL_REGISTRY{{ '}' }}/${{ '{' }}LOCAL_REPOSITORY{{ '}' }} --to-release-image=${{ '{' }}LOCAL_REGISTRY{{ '}' }}/${{ '{' }}LOCAL_REPOSITORY{{ '}' }}:${{ '{' }}OCP_RELEASE{{ '}' }}-x86_64
+      register: release_mirror
+
+    - name: Message
+      debug:
+        var: release_mirror
