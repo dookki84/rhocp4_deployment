@@ -51,7 +51,7 @@
 #          (.*)Organization Name(.*): "Red Hat"
 #          (.*)Organizational Unit Name(.*): "GPTE"
 #          (.*)Common Name(.*): "utilityvm.example.com"
-#          (.*)Email Address(.*): "dekim@redhat.com"
+#          (.*)Email Address(.*): "test@redhat.com"
 
 
 - name: Deploy Container Registry
