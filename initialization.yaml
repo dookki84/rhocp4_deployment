@@ -98,7 +98,7 @@
         send -- "utilityvm.example.com\r"
         
         expect "(.*)Email Address(.*):"
-        send -- "dekim@redhat.com\r"
+        send -- "test@redhat.com\r"
 
         interact
 
@@ -119,4 +119,4 @@
 #          (.*)Organization Name(.*): "Red Hat"
 #          (.*)Organizational Unit Name(.*): "GPTE"
 #          (.*)Common Name(.*): "utilityvm.example.com"
-#          (.*)Email Address(.*): "dekim@redhat.com"
+#          (.*)Email Address(.*): "test@redhat.com"
