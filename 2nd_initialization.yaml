@@ -1,0 +1,18 @@
+- name: Next Phase
+  hosts: localhost
+  tasks:
+    - name: Extrace openshift-install binary
+      shell: oc adm release extract -a {{ lookup('env', 'HOME') }}/merged_pullsecret.json --command=openshift-install {{ lookup('env', 'LOCAL_REGISTRY') }}/{{ lookup('env', 'LOCAL_REPOSITORY') }}:{{ lookup('env', 'OCP_RELEASE') }}-x86_64
+      args:
+        creates: /home/dekim-redhat.com/ansible_auto_deployment/openshift-install
+
+    - name: Move openshift-install binary
+      command: mv openshift-install /usr/local/sbin/
+      args:
+        creates: /usr/local/sbin/openshift-install
+      become: true
+
+    - name: Create openstack-upi Directory
+      file:
+        path: "{{ lookup('env', 'HOME') }}/openstack-upi"
+        state: directory

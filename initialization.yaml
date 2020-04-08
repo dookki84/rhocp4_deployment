@@ -237,18 +237,11 @@
     - name: Import source file
       shell: source $HOME/.bashrc
 
-    - name: print variable
-      shell: echo $PRODUCT_REPO
-      register: test
-
-    - name: print debug
-      debug:
-        msg: "{{ test }}"
 
     - name: Release Mirror
-      shell: /usr/local/sbin/oc adm -a ${{ '{' }}LOCAL_SECRET_JSON{{ '}' }} release mirror --from=quay.io/${{ '{' }}PRODUCT_REPO{{ '}' }}/${{ '{' }}RELEASE_NAME{{ '}' }}:${{ '{' }}OCP_RELEASE{{ '}' }}-x86_64 --to=${{ '{' }}LOCAL_REGISTRY{{ '}' }}/${{ '{' }}LOCAL_REPOSITORY{{ '}' }} --to-release-image=${{ '{' }}LOCAL_REGISTRY{{ '}' }}/${{ '{' }}LOCAL_REPOSITORY{{ '}' }}:${{ '{' }}OCP_RELEASE{{ '}' }}-x86_64
+      shell: /usr/local/sbin/oc adm -a {{ lookup('env','LOCAL_SECRET_JSON') }} release mirror --from=quay.io/{{ lookup('env','PRODUCT_REPO') }}/{{ lookup('env','RELEASE_NAME') }}:{{ lookup('env','OCP_RELEASE') }}-x86_64 --to={{ lookup('env','LOCAL_REGISTRY') }}/{{ lookup('env','LOCAL_REPOSITORY') }} --to-release-image={{ lookup('env','LOCAL_REGISTRY') }}/{{ lookup('env','LOCAL_REPOSITORY') }}:{{ lookup('env','OCP_RELEASE') }}-x86_64
       register: release_mirror
 
-    - name: Message
-      debug:
-        var: release_mirror
+
+    - name: Extrace openshift-install binary
+      shell: oc adm release extract -a {{ lookup('env', 'HOME') }}/merged_pullsecret.json --command=openshift-install {{ lookup('env', 'LOCAL_REGISTRY') }}/{{ lookup('env', 'LOCAL_REPOSITORY') }}:{{ lookup('env', 'OCP_RELEASE') }}-x86_64

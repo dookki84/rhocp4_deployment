@@ -1,0 +1,8 @@
+- name: Next Phase
+  hosts: localhost
+  tasks:
+    - name: Extrace openshift-install binary
+      lineinfile:
+        path: /home/dekim-redhat.com/openstack-upi/install-config.yaml
+        regexp: "^export LOCAL_REGISTRY"
+        line: "export LOCAL_REGISTRY=utilityvm.example.com:5000"
